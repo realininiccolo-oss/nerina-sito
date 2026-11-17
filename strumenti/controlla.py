@@ -6,6 +6,8 @@ Uso: python3 strumenti/controlla.py   (dalla radice del repository). Esce con 1 
 3. Ogni link interno porta a un file esistente; ogni ancora esiste nella pagina d'arrivo.
 4. noindex esattamente dove c'era in b2f5422 (più 404.html, pagina nuova).
 5. Testo visibile di <main> uguale a b2f5422, salvo le frasi del passo 4 (testo estratto, non HTML).
+   La pagina iniziale (it, en) è esclusa dal 18/11: testi nuovi chiesti da Niccolò (17/11 23:57); per lei si
+   controlla solo che abbia la riga di Nerina Devs con il link all'informativa.
 6. Contrasto ≥ 4,5:1 per testo e link nei due temi (valori letti da sito.css).
 """
 import html.parser
@@ -62,7 +64,13 @@ COPPIE = [
     ("primario-testo", "carta", "link"), ("primario-testo", "carta-alta", "link su schede e indice"),
     ("primario-testo", "carta-bassa", "link del piè al passaggio"), ("primario-testo", "primario-tenue", "icone dei blocchi"),
     ("ambra-testo", "carta-alta", "titolo dell'indice"), ("inchiostro", "ambra-tenue", "riquadro Bozza"),
-    ("su-primario", "primario", "passero dell'intestazione"), ("inchiostro-3", "carta-alta", "frecce"),
+    ("su-primario", "primario", "bottoni pieni"), ("su-primario", "primario-forte", "bottoni al passaggio, invito"),
+    ("inchiostro-3", "carta-alta", "frecce e didascalie"), ("inchiostro-3", "carta", "didascalia delle schermate"),
+    ("primario-testo", "su-primario", "bottone chiaro dell'invito"), ("inchiostro", "carta", "bottone secondario"),
+    ("su-notte", "notte", "manifesto"), ("su-notte-2", "notte", "manifesto, testo secondario"),
+    ("su-notte-2", "notte-alta", "tabella del confronto"), ("notte-accento", "notte", "occhiello del manifesto"),
+    ("notte-accento", "notte-alta", "intestazione Nerina nel confronto"), ("su-primario", "primario-tenue", "_salta_"),
+    ("inchiostro", "primario-tenue", "livello di partenza"), ("primario-testo", "primario-tenue", "icone"),
 ]
 
 
@@ -206,7 +214,12 @@ def main():
         errori.append("[4] 404.html senza noindex")
 
     # 5. testo visibile
+    for p, riga in (("index.html", ED_IT), ("en/index.html", ED_EN)):
+        if riga not in normalizza("".join(analisi[p].testo)):
+            errori.append(f"[5] {p}: manca la riga «{riga[:40]}…»")
     for p in PAGINE_VECCHIE:
+        if p in ("index.html", "en/index.html"):
+            continue
         prima = normalizza("".join(leggi(vecchio(p)).testo))
         for a, b in ATTESI.get(p, []):
             if prima.count(a) != 1:
@@ -225,7 +238,7 @@ def main():
     scuro = {**chiaro, **dict(re.findall(r"--([a-z0-9-]+):\s*(#[0-9a-fA-F]{6})", scuro_blocco))}
     righe_contrasto = []
     for nome_tema, tema in (("chiaro", chiaro), ("scuro", scuro)):
-        for fg, bg, uso in COPPIE:
+        for fg, bg, uso in [c for c in COPPIE if c[2] != "_salta_"]:
             r = contrasto(tema[fg], tema[bg])
             righe_contrasto.append(f"{nome_tema:6} {fg} su {bg} ({uso}): {r:.2f}")
             if r < 4.5:

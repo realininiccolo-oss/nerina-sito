@@ -214,3 +214,138 @@ def illustrazione_404():
 <g transform="translate(96 26)"><rect class="ill-bollo" width="48" height="48" rx="14"/>
 <g transform="translate(8 8) scale(1.33)" class="ill-passero" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="{PASSERO_D}"/></g></g>
 </g></svg>"""
+
+
+# ---------------------------------------------------------------- passero v12 (disegno vero, statico)
+# strumenti/passero-v12.svg: il contenuto dell'SVG di <nerina-passero-v5 stato="attesa" fermo> della v12
+# (design/prototipo-v12/componenti/passero-anim-v5.js), reso in Chrome con i colori di Recanati chiaro e
+# salvato con gli stili calcolati come attributi. Nessun JavaScript sul sito: si anima solo con CSS.
+import re as _re
+import xml.etree.ElementTree as _ET
+
+_ET.register_namespace("", "http://www.w3.org/2000/svg")
+_NS = "{http://www.w3.org/2000/svg}"
+_PASSERO_V12 = open(__file__.replace("grafica.py", "passero-v12.svg"), encoding="utf-8").read()
+_ANIMATI = {"passero-assetto": "pa-assetto", "passero-testa": "pa-testa", "passero-coda": "pa-coda",
+            "passero-volo": "pa-volo"}
+
+
+def passero_v12(uid, ombra=True):
+    """Il passero della v12 come <g> (unità del passero: piedi in 0,0; circa x -66..50, y -72..4)."""
+    radice = _ET.fromstring(f'<g xmlns="http://www.w3.org/2000/svg">{_PASSERO_V12}</g>')
+    genitori = {f: p for p in radice.iter() for f in p}
+    for el in list(radice.iter()):
+        i = el.get("id")
+        if i in ("passero-ombra", "passero-portata") and not ombra:
+            genitori[el].remove(el)
+            continue
+        if i in _ANIMATI:
+            interno = _ET.Element(f"{_NS}g", {"class": _ANIMATI[i]})
+            for figlio in list(el):
+                el.remove(figlio)
+                interno.append(figlio)
+            el.append(interno)
+    testo = _ET.tostring(radice, encoding="unicode")
+    testo = _re.sub(r'^<g xmlns="http://www.w3.org/2000/svg">|</g>$', "", testo)
+    testo = testo.replace("-u1", f"-{uid}")
+    testo = testo.replace('id="passero-volo"', f'id="pv-{uid}"').replace('href="#passero-volo"', f'href="#pv-{uid}"')
+    testo = _re.sub(r' id="(passero|piedistallo|pd|onda|particelle|foglie)[^"]*"', "", testo)
+    return testo.replace(' xmlns="http://www.w3.org/2000/svg"', "")
+
+
+MARCHIO_PASSERO = "/immagini/passero-marchio.webp"
+# Marchio completo di Niccolò (nerina-logo_chiaro/scuro_fondo-pieno_4096px.png, 18/11/2026): il passero blu è
+# ritagliato dalle due versioni (differenza chiaro/scuro) in immagini/passero-marchio*.webp; scritta e foglia sono
+# gli stessi vettori del logo v12 (1 unità = 12 px del file a 4096 px), così prendono i colori del tema.
+
+
+def logo(uid="", classe="logo", piccolo=False):
+    src = "/immagini/passero-marchio-320.webp" if piccolo else MARCHIO_PASSERO
+    return (
+        f'<svg class="{classe}" viewBox="-2 -133 300 137" aria-hidden="true" focusable="false">'
+        f'<image class="logo-passero" href="{src}" x="75.25" y="-130.67" width="94.25" height="91.08"/>'
+        f'<path class="scritta-lettere" d="{SCRITTA_D}"/>'
+        f'<path class="scritta-foglia" transform="translate(165.00 -59.79) rotate(-5) scale(0.98)" d="{FOGLIA_D}"/>'
+        f"</svg>"
+    )
+
+
+def marchio(href, etichetta, uid="testata"):
+    return f'<a class="marchio" href="{href}" aria-label="{etichetta}">{logo(uid, piccolo=True)}</a>'
+
+
+_ICONE.update({
+    "persone": '<path d="M3 7.5c5 0 6 3.5 9 3.5s4-3.5 9-3.5"/><path class="accento" d="M3 16.5c5 0 6-3.5 9-3.5s4 3.5 9 3.5"/>',
+    "lavoro": '<path d="M4 7h3M11 7h9"/><circle cx="9" cy="7" r="2"/><path d="M4 12h9M17 12h3"/>'
+              '<circle class="accento" cx="15" cy="12" r="2"/><path d="M4 17h1M9 17h11"/><circle cx="7" cy="17" r="2"/>',
+    "acquisti": '<path d="M5 8.5h14l-1 12H6z"/><path class="accento" d="M9 8.5V7a3 3 0 0 1 6 0v1.5"/>',
+    "cerca": '<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5l5 5"/><circle class="accento-pieno" cx="10.5" cy="10.5" r="1.75"/>',
+    "diario": '<path d="M12 6.5C10 5 7 4.5 3.5 5v14c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5c-3.5-.5-6.5 0-8.5 1.5z"/>'
+              '<path d="M12 6.5v14"/><path class="accento" d="M15 9.5h2.5M15 13h2.5"/>',
+    "foglia": '<path d="M5 19C4 11 9 5 19 4.5c.5 9.5-5 15-14 14.5z"/><path class="accento" d="M5 19l8-8"/>',
+    "occhio-chiuso": '<path d="M3 10c2.5 3.5 5.5 5 9 5s6.5-1.5 9-5"/><path class="accento" d="M7 14l-1.5 2.5M12 15.5V18M17 14l1.5 2.5"/>',
+    "lucchetto": '<rect x="5" y="10.5" width="14" height="10" rx="3"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/>'
+                 '<circle class="accento-pieno" cx="12" cy="15.5" r="1.5"/>',
+    "maschera": '<path d="M3.5 8.5c3-1.5 14-1.5 17 0 0 5-2.5 8-5 8-1.6 0-2.4-1.5-3.5-1.5s-1.9 1.5-3.5 1.5c-2.5 0-5-3-5-8z"/>'
+                '<circle class="accento-pieno" cx="8.5" cy="11.5" r="1.3"/><circle class="accento-pieno" cx="15.5" cy="11.5" r="1.3"/>',
+    "gruppo": '<circle cx="8" cy="9" r="3"/><circle class="accento" cx="16.5" cy="10" r="2.5"/>'
+              '<path d="M3 19c.5-3 2.5-5 5-5s4.5 2 5 5"/><path class="accento" d="M13.5 18.5c.5-2.3 1.6-3.8 3-3.8s2.6 1.5 3 3.8"/>',
+    "europa-ue": '<circle cx="12" cy="12" r="9"/><path class="accento" d="M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9M12 3c-2.5 2.6-3.8 5.6-3.8 9s1.3 6.4 3.8 9M3.5 9h17M3.5 15h17"/>',
+    "orologio": '<circle cx="12" cy="12" r="8.5"/><path class="accento" d="M12 7.5V12l3 2"/>',
+    "cuore-no": '<path d="M12 19.5C6 15.5 3.5 12.5 3.5 9.3 3.5 7 5.3 5 7.6 5c1.8 0 3.3 1 4.4 2.6C13.1 6 14.6 5 16.4 5c2.3 0 4.1 2 4.1 4.3 0 3.2-2.5 6.2-8.5 10.2z"/>'
+                '<path class="accento" d="M4 20L20 4"/>',
+    "chiave": '<circle cx="8" cy="15" r="4"/><path d="M11 12l8.5-8.5"/><path class="accento" d="M16 7l2.5 2.5M18.5 4.5l2 2"/>',
+})
+
+
+def illustrazione_eroe():
+    """Colline di Recanati, il passero posato al centro, due omini; le foglie (proposte) volano verso tutti e due."""
+    foglia = lambda x, y, r, cl: (f'<path class="{cl}" transform="translate({x} {y}) rotate({r}) scale(1.1)" '
+                                   f'd="{FOGLIA_D}"/>')
+    om1 = omino("eroe-1", "infinito", testa="visiera", vestito="felpa", gesto="ciao")
+    om2 = omino("eroe-2", "petrolio", testa="chioma", vestito="scollo", viso=("guance",), gesto="cuore")
+    rotta_s = "M352 152 C290 150 150 170 116 288"
+    rotta_d = "M352 152 C410 170 430 220 414 288"
+    cielo = "M-60 120 C80 40 200 150 300 90 C390 40 470 70 600 30"
+    volo_foglia = lambda rotta, inizio, cl: (
+        f'<g class="ill-movimento"><path class="{cl}" d="{FOGLIA_D}" transform="scale(1.15)">'
+        f'</path><animateMotion dur="5.5s" begin="{inizio}" repeatCount="indefinite" rotate="auto" '
+        f'keyPoints="0;1" keyTimes="0;1" calcMode="spline" keySplines=".45 .05 .35 1" path="{rotta}"/>'
+        f'<animate attributeName="opacity" dur="5.5s" begin="{inizio}" repeatCount="indefinite" '
+        f'values="0;1;1;0" keyTimes="0;.12;.8;1"/></g>')
+    return f"""<svg class="illustrazione" viewBox="0 0 520 440" aria-hidden="true" focusable="false">
+<defs>
+<linearGradient id="ill-cielo" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="ill-cielo-1"/><stop offset="1" class="ill-cielo-2"/></linearGradient>
+<radialGradient id="ill-alone" cx=".5" cy=".5" r=".5"><stop offset="0" class="ill-alone-1"/><stop offset="1" class="ill-alone-2"/></radialGradient>
+<clipPath id="ill-cornice"><rect width="520" height="440" rx="36"/></clipPath>
+<linearGradient id="ill-sfuma" x1="0" y1="0" x2="0" y2="1"><stop offset=".7" stop-color="#fff"/><stop offset=".9" stop-color="#000"/></linearGradient>
+<mask id="ill-maschera-uccello" maskContentUnits="userSpaceOnUse"><rect x="168" y="34" width="196" height="189.3" fill="url(#ill-sfuma)"/></mask>
+</defs>
+<g clip-path="url(#ill-cornice)">
+<rect width="520" height="440" fill="url(#ill-cielo)"/>
+<g class="ill-sole-gruppo"><circle cx="390" cy="150" r="130" fill="url(#ill-alone)"/><circle class="ill-sole" cx="390" cy="150" r="36"/></g>
+<g class="ill-stelle"><circle cx="70" cy="60" r="1.6"/><circle cx="130" cy="34" r="1.2"/><circle cx="220" cy="70" r="1.4"/><circle cx="450" cy="48" r="1.2"/><circle cx="490" cy="110" r="1.5"/><circle cx="36" cy="140" r="1.1"/><circle cx="300" cy="40" r="1.3"/></g>
+<g class="ill-nuvole"><path d="M40 118 h70 a14 14 0 0 0 -22 -16 a20 20 0 0 0 -36 6 a12 12 0 0 0 -12 10 z"/><path d="M330 72 h56 a11 11 0 0 0 -18 -12 a16 16 0 0 0 -29 5 a10 10 0 0 0 -9 7 z"/></g>
+<g class="ill-movimento ill-volo-lontano"><g><path class="ill-passero-lontano" d="{PASSERO_D}" transform="translate(-12 -12) scale(1)" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+<animateMotion dur="16s" repeatCount="indefinite" path="{cielo}" rotate="0"/></g></g>
+<path class="ill-colle-3" d="M0 236 C70 206 140 200 210 214 C290 230 350 192 430 186 C470 183 500 192 520 200 V440 H0 Z"/>
+<path class="ill-torre" d="M120 214 v-36 h5 v-8 h12 v8 h5 v36 z M150 216 h26 v-17 l-13 -10 l-13 10 z"/>
+<path class="ill-colle-2" d="M0 280 C80 250 160 254 240 268 C330 284 400 250 520 258 V440 H0 Z"/>
+<path class="ill-colle-1" d="M0 340 C100 312 190 322 266 334 C360 348 440 320 520 326 V440 H0 Z"/>
+<path class="ill-filari" d="M30 382 C130 362 220 370 286 378 M60 404 C160 386 260 392 360 404 M280 364 C360 350 440 348 510 354" fill="none" stroke-width="2" stroke-linecap="round" stroke-dasharray="2 9"/>
+{foglia(48, 356, -20, "ill-foglia-1")}{foglia(468, 372, 15, "ill-foglia-2")}{foglia(440, 290, -60, "ill-foglia-1")}
+</g>
+<path class="ill-rotta" d="{rotta_s}" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="1 9"/>
+<path class="ill-rotta" d="{rotta_d}" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="1 9"/>
+<g class="ill-uccello"><image href="/immagini/passero-marchio.webp" x="168" y="34" width="196" height="189.3" mask="url(#ill-maschera-uccello)"/>
+<path class="ill-foglia-becco" transform="translate(352 148) rotate(-5) scale(1.25)" d="{FOGLIA_D}"/></g>
+{volo_foglia(rotta_s, "0s", "ill-foglia-volo")}{volo_foglia(rotta_d, "2.75s", "ill-foglia-volo-2")}
+<g class="ill-omino ill-omino-1"><g transform="translate(64 292) scale(1.6)">{om1}</g></g>
+<g class="ill-omino ill-omino-2"><g transform="translate(466 292) scale(-1.6 1.6)">{om2}</g></g>
+</svg>"""
+
+
+def passero_grande(uid):
+    """Il passero da solo, grande, per la sezione «Il passero»."""
+    return (f'<svg class="passero-ritratto" viewBox="-80 -86 140 96" aria-hidden="true" focusable="false">'
+            f'<g class="passero-scena">{passero_v12(uid)}</g></svg>')

@@ -14,6 +14,7 @@ import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 import grafica as g  # noqa: E402
+import casa as casa_v2  # noqa: E402
 
 RADICE = pathlib.Path(__file__).resolve().parent.parent
 SORGENTE = "b2f5422"
@@ -72,9 +73,21 @@ NOME = {
 
 CHROME = {
     "it": dict(salta="Vai al contenuto", casa="/", marchio="Nerina, pagina iniziale", pagine="Pagine del sito",
-               tabella="Tabella: scorre di lato", indice="In questa pagina"),
+               tabella="Tabella: scorre di lato", indice="In questa pagina", sezioni="Sezioni",
+               voci=[("come-funziona", "Come funziona"), ("passero", "Il passero"), ("privacy", "Privacy"),
+                     ("domande", "Domande")],
+               titolo="Nerina · Trova chi parla la tua lingua",
+               descrizione="Nerina è il social senza feed e senza post: racconti in privato al passero, "
+                           "un&#x27;intelligenza artificiale, che cosa cerchi, e lui ti porta proposte pensate per te. "
+                           "Privacy dal primo giorno. Pilota su invito."),
     "en": dict(salta="Skip to content", casa="/en/", marchio="Nerina, home page", pagine="Site pages",
-               tabella="Table: scrolls sideways", indice="On this page"),
+               tabella="Table: scrolls sideways", indice="On this page", sezioni="Sections",
+               voci=[("come-funziona", "How it works"), ("passero", "The sparrow"), ("privacy", "Privacy"),
+                     ("domande", "FAQ")],
+               titolo="Nerina · Find people who speak your language",
+               descrizione="Nerina is the social app with no feed and no posts: tell the sparrow, an AI, in private "
+                           "what you are looking for, and it brings you proposals made for you. Privacy from day one. "
+                           "Invite-only pilot."),
 }
 
 
@@ -92,10 +105,13 @@ def parti(testo):
     return lang, testa, nav, corpo, piede
 
 
-def testata(lang, nav):
+def testata(lang, nav, casa=False):
     c = CHROME[lang]
+    base = "" if casa else c["casa"]
+    sezioni = "".join(f'<li><a href="{base}#{i}">{t}</a></li>' for i, t in c["voci"])
     return (f'<a class="salta" href="#contenuto">{c["salta"]}</a>\n'
             f'<header class="testata"><div class="testata-in">\n{g.marchio(c["casa"], c["marchio"])}\n'
+            f'<nav class="sezioni" aria-label="{c["sezioni"]}"><ul>{sezioni}</ul></nav>\n'
             f'<nav class="lingua" aria-label="Language · Lingua">{nav}</nav>\n</div></header>')
 
 
@@ -103,7 +119,7 @@ def piede(lang, voci, nav, attuale):
     c = CHROME[lang]
     li = "".join(
         f'<li><a href="{h}"{" aria-current=\"page\"" if h == attuale else ""}>{t}</a></li>' for h, t in voci)
-    return (f'<footer class="piede"><div class="piede-in">\n<div class="piede-marchio">{g.scritta()}</div>\n'
+    return (f'<footer class="piede"><div class="piede-in">\n<div class="piede-marchio">{g.logo(classe="logo logo-piede", piccolo=True)}</div>\n'
             f'<nav aria-label="{c["pagine"]}"><ul>{li}</ul></nav>\n<p class="piede-lingua">{nav}</p>\n</div></footer>')
 
 
@@ -111,7 +127,7 @@ def documento(lang, testa, classe, corpo_html, nav, voci, attuale):
     colori = ('<meta name="theme-color" content="#f8f1e6" media="(prefers-color-scheme: light)">\n'
               '<meta name="theme-color" content="#1a120d" media="(prefers-color-scheme: dark)">\n')
     return (f'<!doctype html>\n<html lang="{lang}">\n<head>\n{testa}{colori}</head>\n<body class="{classe}">\n'
-            f"{testata(lang, nav)}\n<main id=\"contenuto\">\n{corpo_html.strip()}\n</main>\n"
+            f"{testata(lang, nav, classe == 'pagina-casa')}\n<main id=\"contenuto\">\n{corpo_html.strip()}\n</main>\n"
             f"{piede(lang, voci, nav, attuale)}\n</body>\n</html>\n")
 
 
@@ -136,45 +152,12 @@ def impagina(corpo, lang):
     return corpo
 
 
-def casa(lang):
-    if lang == "it":
-        t = dict(
-            h1='<h1 id="che-cos-e-nerina">Che cos&#x27;è Nerina</h1>',
-            attacco="Nerina è un&#x27;app per conoscere persone, trovare lavoro e scoprire posti, con l&#x27;aiuto del "
-                    "passero, un&#x27;intelligenza artificiale.",
-            punti=["Si entra solo su invito.", "È per chi vive nell&#x27;Unione europea.",
-                   "Si entra dai 16 anni, dopo la verifica di un documento d&#x27;identità."],
-            editore=EDITORE_IT,
-            porte=[("/contatti/", "Contatti", "busta"), ("/informativa/", "Informativa sulla privacy", "pagina"),
-                   ("/termini/", "Termini d&#x27;uso", "consensi"),
-                   ("/sicurezza-minori/", "Sicurezza dei minori", "scudo"),
-                   ("/elimina-account/", "Elimina il tuo account", "cestino")])
-    else:
-        t = dict(
-            h1='<h1 id="what-is-nerina">What is Nerina</h1>',
-            attacco="Nerina is an app to meet people, find work and discover places, with the help of the sparrow, an AI.",
-            punti=["You can join only by invitation.", "It is for people who live in the European Union.",
-                   "You can join from the age of 16, after an identity document is verified."],
-            editore=EDITORE_EN,
-            porte=[("/en/contact/", "Contact", "busta"), ("/en/informativa/", "Privacy policy", "pagina"),
-                   ("/en/terms/", "Terms of use", "consensi"), ("/en/child-safety/", "Child safety", "scudo"),
-                   ("/en/delete-account/", "Delete your account", "cestino")])
-    icone = ["invito", "europa", "identita"]
-    punti = "\n".join(f"<li>{g.icona(i)}<p>{p}</p></li>" for i, p in zip(icone, t["punti"]))
-    porte = "\n".join(f'<li><a href="{h}">{g.icona(i)}<span>{s}</span>{g.icona("freccia", "icona freccia", 20)}</a></li>'
-                      for h, s, i in t["porte"])
-    return (f'<section class="eroe">\n<div class="eroe-testo">\n{t["h1"]}\n<p class="attacco">{t["attacco"]}</p>\n'
-            f'</div>\n<div class="eroe-figura">\n{g.illustrazione_casa()}\n</div>\n</section>\n'
-            f'<ul class="punti">\n{punti}\n</ul>\n<p class="editore">{t["editore"]}</p>\n'
-            f'<ul class="porte">\n{porte}\n</ul>')
-
-
 def pagina_404():
     testa = ('<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n'
              '<meta name="color-scheme" content="light dark">\n<title>Pagina non trovata · Page not found · Nerina</title>\n'
              '<meta name="robots" content="noindex">\n<link rel="icon" href="/favicon.svg" type="image/svg+xml">\n'
              '<link rel="stylesheet" href="/fonti/fonti-v12.css">\n<link rel="stylesheet" href="/sito.css">\n')
-    corpo = (f"{g.illustrazione_404()}\n"
+    corpo = (f'<p class="logo-404">{g.logo(classe="logo logo-grande")}</p>\n'
              '<section>\n<h1>Pagina non trovata</h1>\n<p>Questo indirizzo non esiste su nerina.eu. '
              'Forse è cambiato o c&#x27;è un errore di battitura.</p>\n'
              '<p><a href="/">Torna a «Che cos&#x27;è Nerina»</a> · <a href="/contatti/">Contatti</a></p>\n</section>\n'
@@ -197,7 +180,10 @@ def main():
                 sys.exit(f"{p}: «{vecchio[:50]}…» trovato {n} volte, atteso 1")
             corpo = corpo.replace(vecchio, nuovo)
         if p in ("index.html", "en/index.html"):
-            corpo, classe = casa(lang), "pagina-casa"
+            corpo, classe = casa_v2.casa(lang), "pagina-casa"
+            c = CHROME[lang]
+            testa = re.sub(r"<title>.*?</title>", f"<title>{c['titolo']}</title>", testa)
+            testa = testa.replace("</title>\n", f"</title>\n<meta name=\"description\" content=\"{c['descrizione']}\">\n", 1)
         else:
             corpo, classe = impagina(corpo, lang), "pagina-testo"
         attuale = "/" + p.removesuffix("index.html")

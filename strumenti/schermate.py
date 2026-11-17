@@ -1,4 +1,4 @@
-"""Schermate del sito servito in locale (Playwright + Chrome del contenitore).
+"""Schermate del sito (con prefers-reduced-motion: la pagina intera senza le comparse allo scorrimento) servito in locale (Playwright + Chrome del contenitore).
 
 Uso: python3 strumenti/schermate.py CARTELLA_USCITA [PORTA]
 Serve la radice del repository su 127.0.0.1 e fotografa Home, Elimina account e Informativa
@@ -49,19 +49,19 @@ def main():
         for tema in ("light", "dark"):
             for misura, (w, h) in MISURE.items():
                 ctx = browser.new_context(viewport={"width": w, "height": h}, color_scheme=tema,
-                                          device_scale_factor=1)
+                                          device_scale_factor=1, reduced_motion="reduce")
                 pagina = ctx.new_page()
                 pagina.on("request", lambda r: esterne.append(r.url)
                           if not r.url.startswith(f"http://127.0.0.1:{porta}") and not r.url.startswith("data:") else None)
                 for nome, url in PAGINE.items():
                     pagina.goto(f"http://127.0.0.1:{porta}{url}", wait_until="networkidle")
-                    pagina.evaluate("document.fonts.ready")
+                    pagina.evaluate("document.fonts.ready"); pagina.wait_for_timeout(1300)
                     largo = pagina.evaluate("document.documentElement.scrollWidth")
                     if misura == "390" and largo > 390:
                         problemi.append(f"{nome} {tema}: scorrimento orizzontale ({largo}px)")
                     if nome in FOTO:
                         pagina.screenshot(path=str(uscita / f"{nome}-{misura}-{'chiaro' if tema == 'light' else 'scuro'}.png"),
-                                          full_page=(misura == "390" and nome == "home"))
+                                          full_page=(nome == "home"))
                 ctx.close()
         browser.close()
     server.shutdown()
