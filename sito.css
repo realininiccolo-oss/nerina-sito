@@ -1,0 +1,25 @@
+/* P-PS (B7): il foglio del sito statico. Caratteri dal repository (fonti/), chiaro e scuro dal sistema. */
+:root { --fondo: #fbf8f3; --testo: #1f1b16; --tenue: #5b5248; --accento: #8a3b12; --riga: #d9cfc2; }
+@media (prefers-color-scheme: dark) {
+  :root { --fondo: #171411; --testo: #f1ebe3; --tenue: #b9ada0; --accento: #f0a070; --riga: #3a332c; }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--fondo); color: var(--testo);
+  font: 1.0625rem/1.6 "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", system-ui, sans-serif; }
+header, main, footer { max-width: 42rem; margin: 0 auto; padding: 0 16px; }
+header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding-top: 1rem; }
+.marchio { font: 600 1.25rem/1.2 Literata, Georgia, serif; color: var(--testo); text-decoration: none; }
+h1, h2, h3 { font-family: Literata, Georgia, serif; line-height: 1.25; }
+h1 { font-size: 1.75rem; margin: 1.25rem 0 1rem; }
+h2 { font-size: 1.3rem; margin: 2rem 0 0.75rem; }
+a { color: var(--accento); }
+main { overflow-wrap: break-word; }
+.tabella-pubblica { overflow-x: auto; max-width: 100%; }
+table { border-collapse: collapse; width: 100%; min-width: 32rem; font-size: 0.95em; }
+td, th { overflow-wrap: normal; word-break: normal; }
+th, td { border-bottom: 1px solid var(--riga); padding: 0.4rem; text-align: left; vertical-align: top; }
+.bozza-pagina, .modulo-sito { border: 2px solid currentColor; border-radius: 8px; padding: 0.5rem 0.75rem; }
+.bozza-pagina { font-weight: 600; }
+footer { margin-top: 3rem; padding-bottom: 2rem; border-top: 1px solid var(--riga); color: var(--tenue); }
+footer a { display: inline-block; margin: 0.75rem 1rem 0 0; }
