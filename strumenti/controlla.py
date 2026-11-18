@@ -2,7 +2,8 @@
 
 Uso: python3 strumenti/controlla.py   (dalla radice del repository). Esce con 1 se un controllo fallisce.
 1. Il nome del titolare compare solo in informativa e termini (it, en).
-2. Niente <script>, niente risorse (src, href di link) fuori da nerina.eu, niente @import o url() esterni nel CSS.
+2. Niente <script> salvo /sito.js e i blocchi di dati <script type="application/json"> (non si eseguono; devono essere
+   JSON valido e non contenere «</»), niente risorse (src, href di link) fuori da nerina.eu, niente @import o url() esterni nel CSS.
 3. Ogni link interno porta a un file esistente; ogni ancora esiste nella pagina d'arrivo.
 4. noindex esattamente dove c'era in b2f5422 (più 404.html, pagina nuova).
 5. Testo visibile di <main> uguale a b2f5422, salvo le frasi del passo 4 (testo estratto, non HTML).
@@ -11,6 +12,7 @@ Uso: python3 strumenti/controlla.py   (dalla radice del repository). Esce con 1 
 6. Contrasto ≥ 4,5:1 per testo e link nei due temi (valori letti da sito.css).
 """
 import html.parser
+import json
 import pathlib
 import re
 import subprocess
@@ -64,9 +66,7 @@ COPPIE = [
     ("inchiostro-3", "carta", "note"), ("inchiostro-3", "carta-alta", "note nelle schede"),
     ("primario-testo", "carta", "link e nomi delle sezioni"), ("primario-testo", "carta-alta", "contesti degli username"),
     ("carta", "inchiostro", "bottoni e scelte"), ("inchiostro", "ambra-tenue", "riquadro Bozza"),
-    ("inchiostro", "primario-tenue", "la piazza"), ("inchiostro-2", "primario-tenue", "la piazza, righe"),
-    ("inchiostro-3", "primario-tenue", "la piazza, note"), ("inchiostro-2", "ambra-tenue", "la bottega, righe"),
-    ("inchiostro-3", "carta-bassa", "tacche e note"),
+    ("inchiostro-3", "carta-bassa", "tacche e note"), ("primario-testo", "carta-bassa", "icone delle schede"),
 ]
 
 
@@ -80,6 +80,8 @@ class Estrattore(html.parser.HTMLParser):
         self.link = []      # (tag, attributo, valore)
         self.script = False
         self.script_inline = False
+        self.in_json = False
+        self.json = []          # contenuto dei blocchi <script type="application/json">
         self.noindex = False
 
     def handle_starttag(self, tag, attrs):
@@ -87,7 +89,11 @@ class Estrattore(html.parser.HTMLParser):
         if "id" in a:
             self.ids.add(a["id"])
         if tag == "script":
-            self.script = self.script or a.get("src") != "/sito.js"
+            if a.get("type") == "application/json" and "src" not in a:
+                self.in_json = True
+                self.json.append("")
+            else:
+                self.script = self.script or a.get("src") != "/sito.js" or a.get("type") not in (None, "text/javascript")
             self.script_inline = True
         if tag == "meta" and a.get("name") == "robots" and "noindex" in (a.get("content") or ""):
             self.noindex = True
@@ -102,6 +108,8 @@ class Estrattore(html.parser.HTMLParser):
             self.testo.append(" ")
 
     def handle_endtag(self, tag):
+        if tag == "script":
+            self.in_json = False
         if tag == "svg":
             self.svg -= 1
         if self.dentro_main and tag in BLOCCHI:
@@ -110,6 +118,9 @@ class Estrattore(html.parser.HTMLParser):
             self.dentro_main -= 1
 
     def handle_data(self, d):
+        if self.in_json:
+            self.json[-1] += d
+            return
         if self.dentro_main and not self.svg:
             self.testo.append(d)
 
@@ -176,6 +187,11 @@ def main():
                 errori.append(f"[2] risorsa esterna in {p}: <{tag} {k}={v}>")
             elif u.netloc in ("nerina.eu", "www.nerina.eu") and tag != "link":
                 errori.append(f"[2] risorsa assoluta in {p}: {v}")
+        for blocco in e.json:
+            try:
+                json.loads(blocco)
+            except ValueError as err:
+                errori.append(f"[2] {p}: blocco JSON non valido ({err})")
     js = (RADICE / "sito.js").read_text(encoding="utf-8")
     for vietato in ("fetch(", "XMLHttpRequest", "document.cookie", "sendBeacon", "WebSocket", "http://", "https://",
                     "import(", "eval(", "innerHTML"):

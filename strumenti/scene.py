@@ -2,8 +2,8 @@
 
 - finestra_tema(nome): Recanati (colline e torre al tramonto), Infinito (la siepe e l'orizzonte di notte),
   Ginestra (il vulcano e la ginestra), con i colori fissi di ogni tema;
-- vignetta(nome): le risposte alle due domande, nei colori del tema scelto (classi v-*);
-- luogo(nome): i quattro posti in cui porta la prima risposta (piazza, laboratorio, cortile, bottega).
+- domanda(nome): l'illustrazione delle due domande del percorso («chi», «cosa»), nei colori del tema scelto.
+v6 (18/11): tolti i quattro luoghi (piazza, laboratorio, cortile, bottega) e le vignette delle risposte.
 Disegni geometrici, senza testo. Le versioni definitive possono arrivare da Claude Design
 (claude/prompt-design-illustrazioni-sito-2026-11-18.md).
 """
@@ -50,82 +50,29 @@ def finestra_tema(nome):
             f'<path d="{ARCO}" fill="none" stroke="currentColor" stroke-opacity=".18"/></svg>')
 
 
-_VIGNETTE = {
-    # che cosa cerchi
-    "persone": ('<circle class="v-pieno" cx="36" cy="60" r="8"/><path class="v-pieno" d="M22 100 C22 82 29 74 36 74 C43 74 50 82 50 100Z"/>'
-                '<circle class="v-medio" cx="64" cy="60" r="8"/><path class="v-medio" d="M50 100 C50 82 57 74 64 74 C71 74 78 82 78 100Z"/>'
-                f'<path class="v-acc" transform="translate(45 42) rotate(-20) scale(.7)" d="{FOGLIA}"/>'),
-    "lavoro": ('<rect class="v-chiaro" x="24" y="34" width="52" height="40" rx="2"/><path class="v-linea" d="M50 34 V74 M24 54 H76"/>'
-               '<path class="v-pieno" d="M14 82 H86 V86 H14Z"/><path class="v-pieno" d="M66 82 V70 L60 64"/>'
-               '<path class="v-acc" d="M56 64 H66 L62 58 H58Z"/>'),
-    "eventi": ('<path class="v-linea" d="M4 34 Q50 58 96 34"/>'
-               + "".join(f'<circle class="v-amb luce" cx="{x}" cy="{y}" r="2.6"/>' for x, y in ((16, 40), (32, 46), (50, 47), (68, 46), (84, 40)))
-               + '<path class="v-pieno" d="M18 84 H44 M31 84 V98 M56 84 H82 M69 84 V98" stroke-width="3"/>'
-               '<circle class="v-medio" cx="24" cy="74" r="5"/><circle class="v-medio" cx="76" cy="74" r="5"/>'),
-    "azienda": ('<path class="v-acc" d="M18 44 H82 L86 56 H14Z"/>'
-                + "".join(f'<path class="v-chiaro" d="M{18 + i * 16} 44 H{26 + i * 16} L{27 + i * 16} 56 H{19 + i * 16}Z"/>' for i in range(4))
-                + '<rect class="v-medio" x="20" y="56" width="60" height="42"/><rect class="v-chiaro" x="26" y="62" width="22" height="18"/>'
-                '<rect class="v-pieno" x="56" y="66" width="18" height="32"/>'),
-    # chi sei oggi
-    "studio": ('<rect class="v-acc" x="26" y="82" width="48" height="8" rx="1"/><rect class="v-pieno" x="30" y="74" width="40" height="8" rx="1"/>'
-               '<rect class="v-medio" x="24" y="66" width="44" height="8" rx="1"/><path class="v-linea" d="M74 66 V44 Q74 38 66 38"/>'
-               '<path class="v-amb" d="M58 34 H70 L66 42 H62Z"/>'),
-    "lavoro-fase": ('<rect class="v-pieno" x="14" y="58" width="18" height="42"/><rect class="v-medio" x="34" y="44" width="22" height="56"/>'
-                    '<rect class="v-pieno" x="58" y="64" width="14" height="36"/><rect class="v-medio" x="74" y="52" width="14" height="48"/>'
-                    + "".join(f'<rect class="v-amb luce" x="{x}" y="{y}" width="3" height="3"/>' for x, y in ((39, 52), (47, 52), (39, 62), (47, 72), (78, 60), (78, 70), (19, 66))) ),
-    "citta": ('<path class="v-medio" d="M40 100 L48 52 H52 L60 100Z"/><path class="v-linea" d="M50 98 V88 M50 82 V74 M50 68 V60"/>'
-              '<path class="v-pieno" d="M74 100 V46"/><path class="v-acc" d="M74 48 H90 L94 53 L90 58 H74Z"/>'
-              '<circle class="v-amb" cx="28" cy="40" r="6"/>'),
-    "tempo": ('<circle class="v-amb" cx="68" cy="40" r="10"/><circle class="v-medio" cx="30" cy="58" r="14"/><path class="v-pieno" d="M30 70 V96"/>'
-              '<path class="v-pieno" d="M46 84 H84 M50 84 V96 M80 84 V96 M46 78 H84" stroke-width="3"/>'),
-}
-
-
-def vignetta(nome):
-    gid = f"vg-{nome}"
-    return (f'<svg class="vignetta" viewBox="0 0 100 100" aria-hidden="true" focusable="false">'
-            f'<defs><clipPath id="{gid}"><path d="{ARCO_Q}"/></clipPath></defs>'
-            f'<g clip-path="url(#{gid})"><rect class="v-fondo" width="100" height="100"/>{_VIGNETTE[nome]}</g></svg>')
-
-
-def luogo(nome):
-    """Scena larga in fondo alla stanza del luogo (viewBox 0 0 1440 480)."""
-    if nome == "persone":      # la piazza al tramonto
-        portici = "".join(f'<path d="M{x} 480 V330 A40 40 0 0 1 {x + 80} 330 V480Z" class="l-vuoto"/>' for x in range(40, 1440, 120))
-        lampioni = "".join(f'<path class="l-pieno" d="M{x} 480 V300" stroke-width="4"/><circle class="l-luce luce" cx="{x}" cy="294" r="9"/>'
-                           f'<circle class="l-alone" cx="{x}" cy="294" r="34"/>' for x in (230, 720, 1210))
-        corpo = (f'<rect class="l-pieno" x="0" y="250" width="1440" height="230"/>{portici}{lampioni}'
-                 '<circle class="l-figura" cx="680" cy="402" r="14"/><path class="l-figura" d="M660 480 C660 446 668 424 680 424 C692 424 700 446 700 480Z"/>'
-                 '<circle class="l-figura" cx="760" cy="402" r="14"/><path class="l-figura" d="M740 480 C740 446 748 424 760 424 C772 424 780 446 780 480Z"/>'
-                 f'<path class="l-foglia foglia-vola" transform="translate(712 360) rotate(-18) scale(1.6)" d="{FOGLIA}"/>')
-    elif nome == "lavoro":     # il laboratorio di mattina
-        vetri = "".join(f'<rect class="l-vetro" x="{x}" y="{y}" width="150" height="120" rx="4"/>'
-                        for x in (440, 600, 760) for y in (90, 220))
-        corpo = (f'<rect class="l-cornice" x="428" y="78" width="494" height="276" rx="8"/>{vetri}'
-                 '<path class="l-luce-fascio" d="M440 354 L300 480 H1100 L922 354Z"/>'
-                 '<rect class="l-pieno" x="180" y="400" width="1080" height="14" rx="4"/><path class="l-pieno" d="M240 414 V480 M1200 414 V480" stroke-width="10"/>'
-                 '<path class="l-pieno" d="M1020 400 V330 L980 300" stroke-width="6" fill="none"/><path class="l-acc" d="M950 296 H1000 L986 270 H964Z"/>'
-                 '<path class="l-pianta" d="M300 400 C296 360 280 336 262 324 M300 400 C304 356 322 332 344 322 M300 400 V344"/>')
-    elif nome == "eventi":     # il cortile di sera
-        fili = ""
-        for k, (y, s) in enumerate(((60, 70), (110, 90), (160, 60))):
-            fili += f'<path class="l-filo" d="M0 {y} Q720 {y + s * 2} 1440 {y}"/>'
-            for i in range(1, 18):
-                x = i * 80
-                t = x / 1440
-                yy = (1 - t) ** 2 * y + 2 * (1 - t) * t * (y + s * 2) + t ** 2 * y
-                fili += f'<circle class="l-luce luce l{(i + k) % 3}" cx="{x}" cy="{yy:.0f}" r="5"/>'
-        tavoli = "".join(f'<path class="l-pieno" d="M{x - 70} 420 H{x + 70} M{x - 50} 420 V480 M{x + 50} 420 V480" stroke-width="8"/>'
-                         f'<circle class="l-figura" cx="{x - 40}" cy="388" r="13"/><circle class="l-figura" cx="{x + 40}" cy="388" r="13"/>'
-                         for x in (300, 720, 1140))
-        corpo = f'{fili}{tavoli}'
-    else:                      # la bottega
-        strisce = "".join(f'<path class="{"l-acc" if i % 2 else "l-chiaro"}" d="M{300 + i * 70} 150 H{370 + i * 70} L{376 + i * 70} 210 H{294 + i * 70}Z"/>' for i in range(12))
-        barattoli = "".join(f'<rect class="l-vetro" x="{x}" y="{y}" width="34" height="44" rx="6"/>' for x in range(380, 1080, 70) for y in (250,))
-        corpo = (f'<rect class="l-pieno" x="290" y="140" width="860" height="12"/>{strisce}'
-                 f'<rect class="l-muro" x="300" y="210" width="840" height="270"/>'
-                 f'<path class="l-pieno" d="M360 300 H1080" stroke-width="6"/>{barattoli}'
-                 '<rect class="l-pieno" x="600" y="330" width="240" height="150"/><rect class="l-luce-fascio" x="620" y="350" width="200" height="130"/>'
-                 '<circle class="l-figura" cx="720" cy="300" r="0"/>')
-    return (f'<svg class="luogo-scena scena-{nome}" viewBox="0 0 1440 480" preserveAspectRatio="xMidYMax slice" '
-            f'aria-hidden="true" focusable="false">{corpo}</svg>')
+def domanda(nome):
+    """Finestra ad arco grande (viewBox 0 0 120 160) per le due domande, con i colori del tema (classi d-*)."""
+    gid = f"dm-{nome}"
+    stelle = "".join(f'<circle class="d-stella luce" cx="{x}" cy="{y}" r="{r}"/>'
+                     for x, y, r in ((22, 58, .9), (96, 50, .8), (70, 30, .6), (40, 34, .7), (104, 84, .6), (14, 90, .7)))
+    if nome == "chi":
+        # una persona, e dietro tre ombre di colori diversi: i suoi ruoli
+        ombre = "".join(f'<g class="d-ombra o{n}" transform="translate({dx} {dy})"><circle cx="60" cy="92" r="11"/>'
+                        f'<path d="M40 160 C40 128 48 110 60 110 C72 110 80 128 80 160Z"/></g>'
+                        for n, (dx, dy) in enumerate(((-26, 8), (0, -6), (26, 8)), 1))
+        corpo = (f'{stelle}<circle class="d-luna" cx="60" cy="48" r="13"/>{ombre}'
+                 '<g class="d-persona"><circle cx="60" cy="100" r="11"/>'
+                 '<path d="M40 160 C40 132 48 118 60 118 C72 118 80 132 80 160Z"/></g>')
+    else:
+        # un sentiero verso l'orizzonte, luci lontane e una foglia in volo
+        luci = "".join(f'<circle class="d-luce luce" cx="{x}" cy="{y}" r="{r}"/>'
+                       for x, y, r in ((30, 104, 1.6), (44, 101, 1.2), (78, 102, 1.4), (92, 105, 1.8), (60, 99, 1.1)))
+        corpo = (f'{stelle}<path class="d-colle" d="M0 108 C24 98 46 100 62 104 C82 109 100 98 120 100 V160 H0Z"/>'
+                 f'{luci}<path class="d-sentiero" d="M52 160 C56 140 60 124 61 106 C62 124 68 140 76 160Z"/>'
+                 f'<path class="d-foglia foglia-vola" transform="translate(70 70) rotate(-24) scale(1.3)" d="{FOGLIA}"/>')
+    return (f'<svg class="domanda-figura" viewBox="0 0 120 160" aria-hidden="true" focusable="false">'
+            f'<defs><clipPath id="{gid}-c"><path d="{ARCO}"/></clipPath>'
+            f'<linearGradient id="{gid}-g" x1="0" y1="0" x2="0" y2="1"><stop class="d-s1" offset="0"/>'
+            f'<stop class="d-s2" offset="1"/></linearGradient></defs>'
+            f'<g clip-path="url(#{gid}-c)"><rect width="120" height="160" fill="url(#{gid}-g)"/>{corpo}</g>'
+            f'<path d="{ARCO}" fill="none" stroke="currentColor" stroke-opacity=".18"/></svg>')

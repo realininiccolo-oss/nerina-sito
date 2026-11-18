@@ -49,9 +49,4 @@ def css():
     for nome, t in TEMI.items():
         r.append(f'html[data-palette="{nome}"]{{{_blocco(t["chiaro"])}}}')
         r.append(f'@media (prefers-color-scheme: dark){{html[data-palette="{nome}"]{{{_blocco(t["scuro"])}}}}}')
-    # luogo «cortile» (risposta «eventi»): il percorso dopo la risposta va di sera, col tema scelto in scuro
-    sel = 'html[data-cerca="eventi"] {p}.stanza-luogo, html[data-cerca="eventi"] {p}.luogo-eventi'
-    r.append(sel.format(p="") .replace("html[", "html:not([data-palette])[") + f"{{{_blocco(TEMI['recanati']['scuro'])}}}")
-    for nome, t in TEMI.items():
-        r.append(sel.replace("html[", f'html[data-palette="{nome}"][').format(p="") + f"{{{_blocco(t['scuro'])}}}")
     return "\n".join(r) + "\n"
