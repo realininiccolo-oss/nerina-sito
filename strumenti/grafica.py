@@ -253,21 +253,18 @@ def passero_v12(uid, ombra=True):
     return testo.replace(' xmlns="http://www.w3.org/2000/svg"', "")
 
 
-MARCHIO_PASSERO = "/immagini/passero-marchio.webp"
-# Marchio completo di Niccolò (nerina-logo_chiaro/scuro_fondo-pieno_4096px.png, 18/11/2026): il passero blu è
-# ritagliato dalle due versioni (differenza chiaro/scuro) in immagini/passero-marchio*.webp; scritta e foglia sono
-# gli stessi vettori del logo v12 (1 unità = 12 px del file a 4096 px), così prendono i colori del tema.
+# Marchio completo di Niccolò (nerina-logo_chiaro/scuro_fondo-pieno_4096px.png): passero, scritta e foglia in un
+# pezzo solo, su sfondo trasparente, ricavato dalle due versioni (differenza media dall'originale 0,001/255).
+# File: immagini/marchio-{chiaro|scuro}-{360|900|1500}.webp. Mai animato, mai scomposto.
 
 
-def logo(uid="", classe="logo", piccolo=False):
-    src = "/immagini/passero-marchio-320.webp" if piccolo else MARCHIO_PASSERO
-    return (
-        f'<svg class="{classe}" viewBox="-2 -133 300 137" aria-hidden="true" focusable="false">'
-        f'<image class="logo-passero" href="{src}" x="75.25" y="-130.67" width="91.08" height="94.25"/>'
-        f'<path class="scritta-lettere" d="{SCRITTA_D}"/>'
-        f'<path class="scritta-foglia" transform="translate(165.00 -59.79) rotate(-5) scale(0.98)" d="{FOGLIA_D}"/>'
-        f"</svg>"
-    )
+def logo(uid="", classe="logo", piccolo=False, alt=""):
+    w = 360 if piccolo else 900
+    insieme = lambda modo: ", ".join(f"/immagini/marchio-{modo}-{x}.webp {x}w" for x in (360, 900, 1500))
+    misure = "180px" if piccolo else "(max-width: 40rem) 80vw, 34rem"
+    return (f'<picture class="{classe}"><source media="(prefers-color-scheme: dark)" srcset="{insieme("scuro")}" '
+            f'sizes="{misure}"><img src="/immagini/marchio-chiaro-{w}.webp" srcset="{insieme("chiaro")}" sizes="{misure}" '
+            f'width="{w}" height="{round(w * 1623 / 3483)}" alt="{alt}" decoding="async"></picture>')
 
 
 def marchio(href, etichetta, uid="testata"):
@@ -400,5 +397,4 @@ def bandiera(codice):
 
 
 def logo_passero_solo():
-    return ('<img class="passero-mini" src="/immagini/passero-eroe-520.webp" width="520" height="538" alt="" '
-            'decoding="async">')
+    return passero("passero-linea", 40)

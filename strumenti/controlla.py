@@ -64,6 +64,9 @@ COPPIE = [
     ("inchiostro-3", "carta", "note"), ("inchiostro-3", "carta-alta", "note nelle schede"),
     ("primario-testo", "carta", "link e nomi delle sezioni"), ("primario-testo", "carta-alta", "contesti degli username"),
     ("carta", "inchiostro", "bottoni e scelte"), ("inchiostro", "ambra-tenue", "riquadro Bozza"),
+    ("inchiostro", "primario-tenue", "la piazza"), ("inchiostro-2", "primario-tenue", "la piazza, righe"),
+    ("inchiostro-3", "primario-tenue", "la piazza, note"), ("inchiostro-2", "ambra-tenue", "la bottega, righe"),
+    ("inchiostro-3", "carta-bassa", "tacche e note"),
 ]
 
 

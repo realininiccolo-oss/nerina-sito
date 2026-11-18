@@ -55,6 +55,9 @@
   try { percorso = JSON.parse(leggi(CHIAVE_PERCORSO) || "{}") || {}; } catch (e) { percorso = {}; }
 
   function applicaPercorso() {
+    ["cerca", "fase"].forEach(function (k) {
+      if (percorso[k]) { radice.setAttribute("data-" + k, percorso[k]); } else { radice.removeAttribute("data-" + k); }
+    });
     var parti = document.querySelectorAll("[data-se]");
     for (var i = 0; i < parti.length; i++) {
       var regola = parti[i].getAttribute("data-se").split(":");

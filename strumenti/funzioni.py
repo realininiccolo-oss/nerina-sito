@@ -256,8 +256,8 @@ def pagina(chiave, lang):
 
 
 def indice(lang):
-    from casa import _carta_funzione  # noqa: E402  (evita l'import circolare in testa)
+    from casa_carte import carta  # noqa: E402  (evita l'import circolare in testa)
     e = ETICHETTE[lang]
-    carte = "".join(_carta_funzione(k, lang) for k in FUNZIONI)
+    carte = "".join(carta(k, lang) for k in FUNZIONI)
     return (f'<section class="funzioni-indice"><h1>{e["titolo_indice"]}</h1><p class="attacco">{e["attacco_indice"]}</p>'
-            f'<ul class="carte-funzioni">{carte}</ul></section>')
+            f'<ul class="porte-stanze porte-tutte">{carte}</ul></section>')
