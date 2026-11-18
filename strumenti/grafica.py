@@ -373,3 +373,32 @@ def passero_eroe():
 def foglia_filo():
     return (f'<svg class="filo-foglia-svg" viewBox="-8 -22 24 24" aria-hidden="true" focusable="false">'
             f'<path d="{FOGLIA_D}"/></svg>')
+
+
+# ---------------------------------------------------------------- v4: bandiere e passero da solo
+
+_N_BANDIERE = [0]
+
+
+def bandiera(codice):
+    """Bandiere tonde, 20 px. it: tricolore; en: Union Jack semplificata (bandiera del Regno Unito)."""
+    if codice == "it":
+        disegno = ('<rect width="7" height="21" fill="#009246"/><rect x="7" width="7" height="21" fill="#fff"/>'
+                   '<rect x="14" width="7" height="21" fill="#ce2b37"/>')
+    else:
+        disegno = ('<rect width="21" height="21" fill="#012169"/>'
+                   '<path d="M0 0L21 21M21 0L0 21" stroke="#fff" stroke-width="4.2"/>'
+                   '<path d="M0 0L21 21M21 0L0 21" stroke="#c8102e" stroke-width="1.6"/>'
+                   '<path d="M10.5 0V21M0 10.5H21" stroke="#fff" stroke-width="6"/>'
+                   '<path d="M10.5 0V21M0 10.5H21" stroke="#c8102e" stroke-width="3.4"/>')
+    _N_BANDIERE[0] += 1
+    ident = f"band-{codice}-{_N_BANDIERE[0]}"
+    return (f'<svg class="bandiera" viewBox="0 0 21 21" width="20" height="20" aria-hidden="true" focusable="false">'
+            f'<defs><clipPath id="{ident}"><circle cx="10.5" cy="10.5" r="10.5"/></clipPath></defs>'
+            f'<g clip-path="url(#{ident})">{disegno}</g>'
+            f'<circle cx="10.5" cy="10.5" r="10" fill="none" stroke="currentColor" stroke-opacity=".18"/></svg>')
+
+
+def logo_passero_solo():
+    return ('<img class="passero-mini" src="/immagini/passero-eroe-520.webp" width="520" height="538" alt="" '
+            'decoding="async">')

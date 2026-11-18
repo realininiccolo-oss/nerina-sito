@@ -6,7 +6,7 @@ Uso: python3 strumenti/controlla.py   (dalla radice del repository). Esce con 1 
 3. Ogni link interno porta a un file esistente; ogni ancora esiste nella pagina d'arrivo.
 4. noindex esattamente dove c'era in b2f5422 (più 404.html, pagina nuova).
 5. Testo visibile di <main> uguale a b2f5422, salvo le frasi del passo 4 (testo estratto, non HTML).
-   La pagina iniziale (it, en) è esclusa dal 18/11: testi nuovi chiesti da Niccolò (17/11 23:57); per lei si
+   Pagine delle funzioni e indice: nuove dal 18/11, nessun confronto. La pagina iniziale (it, en) è esclusa dal 18/11: testi nuovi chiesti da Niccolò (17/11 23:57); per lei si
    controlla solo che abbia la riga di Nerina Devs con il link all'informativa.
 6. Contrasto ≥ 4,5:1 per testo e link nei due temi (valori letti da sito.css).
 """
@@ -58,13 +58,12 @@ ATTESI = {
 
 # Coppie testo/sfondo usate in sito.css (variabili). Tutte devono stare ≥ 4,5:1 nei due temi.
 COPPIE = [
-    ("inchiostro", "carta", "testo e titoli"), ("inchiostro", "carta-alta", "indice, tabelle"),
-    ("inchiostro", "carta-bassa", "intestazioni delle tabelle"), ("inchiostro-2", "carta", "testo delle tappe"),
-    ("inchiostro-2", "carta-alta", "indice"), ("inchiostro-3", "carta", "nota dell'apertura, riga Nerina Devs"),
-    ("primario-testo", "carta", "link e nome della tappa"), ("primario-testo", "carta-alta", "link nell'indice"),
-    ("primario-testo", "primario-tenue", "numeri dei passi"), ("su-primario", "primario", "bottoni, livello Nessuno, tappa accesa"),
-    ("su-primario", "primario-forte", "bottoni al passaggio"), ("inchiostro", "ambra-tenue", "riquadro Bozza"),
-    ("inchiostro-2", "carta", "numeri delle tappe spente"),
+    ("inchiostro", "carta", "testo e titoli"), ("inchiostro", "carta-alta", "schede, indice"),
+    ("inchiostro", "carta-bassa", "intestazioni delle tabelle, lingua"), ("inchiostro-2", "carta", "testo"),
+    ("inchiostro-2", "carta-alta", "schede"), ("inchiostro-2", "carta-bassa", "lingua non scelta"),
+    ("inchiostro-3", "carta", "note"), ("inchiostro-3", "carta-alta", "note nelle schede"),
+    ("primario-testo", "carta", "link e nomi delle sezioni"), ("primario-testo", "carta-alta", "contesti degli username"),
+    ("carta", "inchiostro", "bottoni e scelte"), ("inchiostro", "ambra-tenue", "riquadro Bozza"),
 ]
 
 
@@ -77,6 +76,7 @@ class Estrattore(html.parser.HTMLParser):
         self.ids = set()
         self.link = []      # (tag, attributo, valore)
         self.script = False
+        self.script_inline = False
         self.noindex = False
 
     def handle_starttag(self, tag, attrs):
@@ -84,7 +84,8 @@ class Estrattore(html.parser.HTMLParser):
         if "id" in a:
             self.ids.add(a["id"])
         if tag == "script":
-            self.script = True
+            self.script = self.script or a.get("src") != "/sito.js"
+            self.script_inline = True
         if tag == "meta" and a.get("name") == "robots" and "noindex" in (a.get("content") or ""):
             self.noindex = True
         for k in ("src", "href", "srcset", "poster", "data"):
@@ -162,7 +163,7 @@ def main():
     # 2. script e risorse esterne
     for p, e in analisi.items():
         if e.script:
-            errori.append(f"[2] <script> in {p}")
+            errori.append(f"[2] script diverso da /sito.js in {p}")
         for tag, k, v in e.link:
             u = urlparse(v)
             esterno = u.scheme in ("http", "https", "") and u.netloc not in ("", "nerina.eu", "www.nerina.eu")
@@ -172,6 +173,11 @@ def main():
                 errori.append(f"[2] risorsa esterna in {p}: <{tag} {k}={v}>")
             elif u.netloc in ("nerina.eu", "www.nerina.eu") and tag != "link":
                 errori.append(f"[2] risorsa assoluta in {p}: {v}")
+    js = (RADICE / "sito.js").read_text(encoding="utf-8")
+    for vietato in ("fetch(", "XMLHttpRequest", "document.cookie", "sendBeacon", "WebSocket", "http://", "https://",
+                    "import(", "eval(", "innerHTML"):
+        if vietato in js:
+            errori.append(f"[2] sito.js contiene {vietato}")
     for css in RADICE.rglob("*.css"):
         t = css.read_text(encoding="utf-8")
         for m in re.finditer(r"@import|url\(\s*['\"]?(https?:)?//", t):
@@ -181,9 +187,11 @@ def main():
         if p.startswith("en/") and any(v.endswith("-it.webp") for _, _, v in e.link + [("", "", x) for x in re.findall(r'src="([^"]+)"', (RADICE / p).read_text(encoding="utf-8"))]):
             errori.append(f"[2] {p}: schermata in italiano nella pagina inglese")
 
-    # 3. link interni e ancore
+    # 3. link interni e ancore; ogni immagine o script locale esiste
     for p, e in analisi.items():
         for tag, k, v in e.link:
+            if k == "src" and v.startswith("/") and not (RADICE / v.lstrip("/").split("?")[0]).exists():
+                errori.append(f"[3] {p}: file mancante {v}")
             if k != "href":
                 continue
             u = urlparse(v)
@@ -229,22 +237,21 @@ def main():
             errori.append(f"[5] {p}: testo diverso dal carattere {i}: prima «…{prima[max(0,i-40):i+60]}» "
                           f"ora «…{ora[max(0,i-40):i+60]}»")
 
-    # 6. contrasto
-    css = (RADICE / "sito.css").read_text(encoding="utf-8")
-    chiaro = dict(re.findall(r"--([a-z0-9-]+):\s*(#[0-9a-fA-F]{6})", css.split("@media (prefers-color-scheme: dark)")[0]))
-    scuro_blocco = re.search(r"@media \(prefers-color-scheme: dark\)\s*\{\s*:root\s*\{(.*?)\}", css, re.S).group(1)
-    scuro = {**chiaro, **dict(re.findall(r"--([a-z0-9-]+):\s*(#[0-9a-fA-F]{6})", scuro_blocco))}
+    # 6. contrasto, su tutti i temi (strumenti/temi.py)
+    sys.path.insert(0, str(pathlib.Path(__file__).parent))
+    import temi
     righe_contrasto = []
-    for nome_tema, tema in (("chiaro", chiaro), ("scuro", scuro)):
-        for fg, bg, uso in COPPIE:
-            r = contrasto(tema[fg], tema[bg])
-            righe_contrasto.append(f"{nome_tema:6} {fg} su {bg} ({uso}): {r:.2f}")
-            if r < 4.5:
-                errori.append(f"[6] {nome_tema}: {fg} {tema[fg]} su {bg} {tema[bg]} = {r:.2f} < 4,5 ({uso})")
-        r = contrasto(tema["focus"], tema["carta"])
-        righe_contrasto.append(f"{nome_tema:6} focus su carta (anello, ≥3): {r:.2f}")
-        if r < 3:
-            errori.append(f"[6] {nome_tema}: anello di focus {r:.2f} < 3")
+    for nome, t in temi.TEMI.items():
+        for modo in ("chiaro", "scuro"):
+            tema = {k.replace("_", "-"): v for k, v in t[modo].items()}
+            for fg, bg, uso in COPPIE:
+                r = contrasto(tema[fg], tema[bg])
+                righe_contrasto.append(f"{nome:8} {modo:6} {fg} su {bg} ({uso}): {r:.2f}")
+                if r < 4.5:
+                    errori.append(f"[6] {nome} {modo}: {fg} {tema[fg]} su {bg} {tema[bg]} = {r:.2f} < 4,5 ({uso})")
+            r = contrasto(tema["ambra-testo"], tema["carta"])
+            if r < 3:
+                errori.append(f"[6] {nome} {modo}: anello di focus {r:.2f} < 3")
 
     print("Pagine controllate:", len(pagine))
     print("Contrasti:")

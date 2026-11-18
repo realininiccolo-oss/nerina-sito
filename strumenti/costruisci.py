@@ -15,6 +15,8 @@ import sys
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 import grafica as g  # noqa: E402
 import casa as casa_v2  # noqa: E402
+import funzioni as fz  # noqa: E402
+import temi  # noqa: E402
 
 RADICE = pathlib.Path(__file__).resolve().parent.parent
 SORGENTE = "b2f5422"
@@ -105,29 +107,58 @@ def parti(testo):
     return lang, testa, nav, corpo, piede
 
 
-def testata(lang, nav, casa=False):
+def selettore(lang, url_it, url_en, classe="lingua"):
+    """Selettore della lingua: due voci con bandiera, quella attuale segnata."""
+    voci = []
+    for codice, url, nome, bandiera in (("it", url_it, "Italiano", g.bandiera("it")),
+                                        ("en", url_en, "English", g.bandiera("en"))):
+        attuale = codice == lang
+        voci.append(f'<a href="{url}" hreflang="{codice}" lang="{codice}" aria-label="{nome}"'
+                    f'{" aria-current=\"true\"" if attuale else ""}>{bandiera}<span>{codice.upper()}</span></a>')
+    return f'<nav class="{classe}" aria-label="Lingua · Language">{"".join(voci)}</nav>'
+
+
+def testata(lang, url_it, url_en):
     c = CHROME[lang]
-    base = "" if casa else c["casa"]
-    sezioni = "".join(f'<li><a href="{base}#{i}">{t}</a></li>' for i, t in c["voci"])
+    e = fz.ETICHETTE[lang]
     return (f'<a class="salta" href="#contenuto">{c["salta"]}</a>\n'
-            f'<header class="testata"><div class="testata-in">\n{g.marchio(c["casa"], c["marchio"])}\n'
-            f'<nav class="lingua" aria-label="Language · Lingua">{nav}</nav>\n</div></header>')
+            f'<header class="testata"><div class="testata-in">\n'
+            f'<a class="testata-funzioni" href="{e["indice"]}">{e["funzioni"]}</a>\n'
+            f'{g.marchio(c["casa"], c["marchio"])}\n{selettore(lang, url_it, url_en)}\n</div></header>')
 
 
-def piede(lang, voci, nav, attuale):
+def piede(lang, voci, url_it, url_en, attuale):
     c = CHROME[lang]
+    e = fz.ETICHETTE[lang]
+    voci = [(e["indice"], e["funzioni"])] + list(voci)
     li = "".join(
         f'<li><a href="{h}"{" aria-current=\"page\"" if h == attuale else ""}>{t}</a></li>' for h, t in voci)
     return (f'<footer class="piede"><div class="piede-in">\n<div class="piede-marchio">{g.logo(classe="logo logo-piede", piccolo=True)}</div>\n'
-            f'<nav aria-label="{c["pagine"]}"><ul>{li}</ul></nav>\n<p class="piede-lingua">{nav}</p>\n</div></footer>')
+            f'<nav aria-label="{c["pagine"]}"><ul>{li}</ul></nav>\n{selettore(lang, url_it, url_en, "lingua lingua-piede")}\n</div></footer>')
 
 
-def documento(lang, testa, classe, corpo_html, nav, voci, attuale):
+RISORSE = ('<link rel="stylesheet" href="/temi.css">\n<link rel="stylesheet" href="/sito.css">\n'
+           '<script src="/sito.js"></script>\n')
+
+
+def documento(lang, testa, classe, corpo_html, url_it, url_en, voci, attuale):
     colori = ('<meta name="theme-color" content="#f8f1e6" media="(prefers-color-scheme: light)">\n'
               '<meta name="theme-color" content="#1a120d" media="(prefers-color-scheme: dark)">\n')
+    testa = testa.replace('<link rel="stylesheet" href="/sito.css">\n', RISORSE)
     return (f'<!doctype html>\n<html lang="{lang}">\n<head>\n{testa}{colori}</head>\n<body class="{classe}">\n'
-            f"{testata(lang, nav, classe == 'pagina-casa')}\n<main id=\"contenuto\">\n{corpo_html.strip()}\n</main>\n"
-            f"{piede(lang, voci, nav, attuale)}\n</body>\n</html>\n")
+            f"{testata(lang, url_it, url_en)}\n<main id=\"contenuto\">\n{corpo_html.strip()}\n</main>\n"
+            f"{piede(lang, voci, url_it, url_en, attuale)}\n</body>\n</html>\n")
+
+
+def testa_nuova(lang, titolo, descrizione, url_it, url_en):
+    return (f'<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n'
+            f'<meta name="color-scheme" content="light dark">\n<title>{titolo}</title>\n'
+            f'<meta name="description" content="{descrizione}">\n'
+            f'<link rel="alternate" hreflang="it" href="https://nerina.eu{url_it}">\n'
+            f'<link rel="alternate" hreflang="en" href="https://nerina.eu{url_en}">\n'
+            f'<link rel="alternate" hreflang="x-default" href="https://nerina.eu{url_it}">\n'
+            f'<link rel="icon" href="/favicon.svg" type="image/svg+xml">\n'
+            f'<link rel="stylesheet" href="/fonti/fonti-v12.css">\n<link rel="stylesheet" href="/sito.css">\n')
 
 
 def impagina(corpo, lang):
@@ -166,13 +197,16 @@ def pagina_404():
     voci = [("/", "Che cos&#x27;è Nerina"), ("/contatti/", "Contatti"), ("/informativa/", "Informativa"),
             ("/termini/", "Termini"), ("/sicurezza-minori/", "Sicurezza dei minori"),
             ("/elimina-account/", "Elimina l&#x27;account")]
-    nav = '<a href="/en/" hreflang="en" lang="en">English</a>'
-    return documento("it", testa, "pagina-404", corpo, nav, voci, None)
+    return documento("it", testa, "pagina-404", corpo, "/", "/en/", voci, None)
 
 
 def main():
+    (RADICE / "temi.css").write_text(temi.css(), encoding="utf-8")
+    voci_casa = {}
     for p in PAGINE:
         lang, testa, nav, corpo, voci = parti(originale(p))
+        if p in ("index.html", "en/index.html"):
+            voci_casa[lang] = voci
         for vecchio, nuovo in NOME.get(p, []):
             n = corpo.count(vecchio)
             if n != 1:
@@ -186,8 +220,26 @@ def main():
         else:
             corpo, classe = impagina(corpo, lang), "pagina-testo"
         attuale = "/" + p.removesuffix("index.html")
-        (RADICE / p).write_text(documento(lang, testa, classe, corpo, nav, voci, attuale), encoding="utf-8")
+        altro = re.search(r'href="([^"]+)"', nav).group(1)
+        url_it, url_en = (attuale, altro) if lang == "it" else (altro, attuale)
+        (RADICE / p).write_text(documento(lang, testa, classe, corpo, url_it, url_en, voci, attuale), encoding="utf-8")
         print("scritta", p)
+    # pagine delle funzioni
+    for lang in ("it", "en"):
+        e = fz.ETICHETTE[lang]
+        pagine = [(e["indice"], fz.indice(lang), e["titolo_indice"], e["attacco_indice"],
+                   fz.ETICHETTE["it"]["indice"], fz.ETICHETTE["en"]["indice"])]
+        for k in fz.FUNZIONI:
+            d = fz.FUNZIONI[k][lang]
+            pagine.append((fz.url_funzione(k, lang), fz.pagina(k, lang), f"{d['nome']} · Nerina", d["frase"],
+                           fz.url_funzione(k, "it"), fz.url_funzione(k, "en")))
+        for url, corpo, titolo, descr, url_it, url_en in pagine:
+            dest = RADICE / url.strip("/") / "index.html"
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            testa = testa_nuova(lang, titolo, re.sub(r"<[^>]+>", "", descr), url_it, url_en)
+            dest.write_text(documento(lang, testa, "pagina-funzione", corpo, url_it, url_en, voci_casa[lang], url),
+                            encoding="utf-8")
+            print("scritta", dest.relative_to(RADICE))
     (RADICE / "404.html").write_text(pagina_404(), encoding="utf-8")
     (RADICE / ".nojekyll").write_text("", encoding="utf-8")
     print("scritte 404.html e .nojekyll")

@@ -15,7 +15,9 @@ from playwright.sync_api import sync_playwright
 
 RADICE = pathlib.Path(__file__).resolve().parent.parent
 PAGINE = {"home": "/", "elimina-account": "/elimina-account/", "informativa": "/informativa/",
-          "home-en": "/en/", "contatti": "/contatti/", "404": "/non-esiste/"}
+          "home-en": "/en/", "contatti": "/contatti/", "404": "/non-esiste/",
+          "funzioni": "/funzioni/", "foglie": "/funzioni/foglie/", "username": "/funzioni/username/",
+          "wind-en": "/en/features/wind/", "features-en": "/en/features/"}
 FOTO = ["home", "elimina-account", "informativa"]
 MISURE = {"390": (390, 844), "1280": (1280, 800)}
 
