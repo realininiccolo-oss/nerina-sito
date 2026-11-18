@@ -111,7 +111,6 @@ def testata(lang, nav, casa=False):
     sezioni = "".join(f'<li><a href="{base}#{i}">{t}</a></li>' for i, t in c["voci"])
     return (f'<a class="salta" href="#contenuto">{c["salta"]}</a>\n'
             f'<header class="testata"><div class="testata-in">\n{g.marchio(c["casa"], c["marchio"])}\n'
-            f'<nav class="sezioni" aria-label="{c["sezioni"]}"><ul>{sezioni}</ul></nav>\n'
             f'<nav class="lingua" aria-label="Language · Lingua">{nav}</nav>\n</div></header>')
 
 

@@ -263,7 +263,7 @@ def logo(uid="", classe="logo", piccolo=False):
     src = "/immagini/passero-marchio-320.webp" if piccolo else MARCHIO_PASSERO
     return (
         f'<svg class="{classe}" viewBox="-2 -133 300 137" aria-hidden="true" focusable="false">'
-        f'<image class="logo-passero" href="{src}" x="75.25" y="-130.67" width="94.25" height="91.08"/>'
+        f'<image class="logo-passero" href="{src}" x="75.25" y="-130.67" width="91.08" height="94.25"/>'
         f'<path class="scritta-lettere" d="{SCRITTA_D}"/>'
         f'<path class="scritta-foglia" transform="translate(165.00 -59.79) rotate(-5) scale(0.98)" d="{FOGLIA_D}"/>'
         f"</svg>"
@@ -349,3 +349,27 @@ def passero_grande(uid):
     """Il passero da solo, grande, per la sezione «Il passero»."""
     return (f'<svg class="passero-ritratto" viewBox="-80 -86 140 96" aria-hidden="true" focusable="false">'
             f'<g class="passero-scena">{passero_v12(uid)}</g></svg>')
+
+
+# ---------------------------------------------------------------- v3 (18/11 mattina): passero dell'apertura
+# Coordinate in pixel del file del marchio a 4096 px, con origine nell'angolo del ritaglio del passero
+# (1147, 340): passero 1093 × 1131; la foglia è quella della scritta, scalata 12 × 0,98 e messa dove sta nel marchio.
+
+
+def passero_eroe():
+    return (
+        '<svg class="eroe-passero" viewBox="0 0 1240 1131" aria-hidden="true" focusable="false">'
+        '<defs><linearGradient id="eroe-sfuma" x1="0" y1="0" x2="0" y2="1">'
+        '<stop offset=".74" stop-color="#fff"/><stop offset=".9" stop-color="#000"/></linearGradient>'
+        '<mask id="eroe-maschera" maskContentUnits="userSpaceOnUse">'
+        '<rect width="1093" height="1131" fill="url(#eroe-sfuma)"/></mask></defs>'
+        '<g class="eroe-volo">'
+        '<image href="/immagini/passero-eroe-900.webp" width="1093" height="1131" mask="url(#eroe-maschera)"/>'
+        f'<g transform="translate(1077 850.5) rotate(-5) scale(11.76)"><path class="eroe-foglia" d="{FOGLIA_D}"/></g>'
+        '</g></svg>'
+    )
+
+
+def foglia_filo():
+    return (f'<svg class="filo-foglia-svg" viewBox="-8 -22 24 24" aria-hidden="true" focusable="false">'
+            f'<path d="{FOGLIA_D}"/></svg>')

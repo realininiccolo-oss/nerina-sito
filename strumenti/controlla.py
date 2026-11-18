@@ -58,19 +58,13 @@ ATTESI = {
 
 # Coppie testo/sfondo usate in sito.css (variabili). Tutte devono stare ≥ 4,5:1 nei due temi.
 COPPIE = [
-    ("inchiostro", "carta", "testo"), ("inchiostro", "carta-alta", "testo su schede"),
-    ("inchiostro", "carta-bassa", "intestazioni delle tabelle"), ("inchiostro-2", "carta", "testo secondario"),
-    ("inchiostro-2", "carta-alta", "testo secondario su schede"), ("inchiostro-2", "carta-bassa", "piè di pagina"),
-    ("primario-testo", "carta", "link"), ("primario-testo", "carta-alta", "link su schede e indice"),
-    ("primario-testo", "carta-bassa", "link del piè al passaggio"), ("primario-testo", "primario-tenue", "icone dei blocchi"),
-    ("ambra-testo", "carta-alta", "titolo dell'indice"), ("inchiostro", "ambra-tenue", "riquadro Bozza"),
-    ("su-primario", "primario", "bottoni pieni"), ("su-primario", "primario-forte", "bottoni al passaggio, invito"),
-    ("inchiostro-3", "carta-alta", "frecce e didascalie"), ("inchiostro-3", "carta", "didascalia delle schermate"),
-    ("primario-testo", "su-primario", "bottone chiaro dell'invito"), ("inchiostro", "carta", "bottone secondario"),
-    ("su-notte", "notte", "manifesto"), ("su-notte-2", "notte", "manifesto, testo secondario"),
-    ("su-notte-2", "notte-alta", "tabella del confronto"), ("notte-accento", "notte", "occhiello del manifesto"),
-    ("notte-accento", "notte-alta", "intestazione Nerina nel confronto"), ("su-primario", "primario-tenue", "_salta_"),
-    ("inchiostro", "primario-tenue", "livello di partenza"), ("primario-testo", "primario-tenue", "icone"),
+    ("inchiostro", "carta", "testo e titoli"), ("inchiostro", "carta-alta", "indice, tabelle"),
+    ("inchiostro", "carta-bassa", "intestazioni delle tabelle"), ("inchiostro-2", "carta", "testo delle tappe"),
+    ("inchiostro-2", "carta-alta", "indice"), ("inchiostro-3", "carta", "nota dell'apertura, riga Nerina Devs"),
+    ("primario-testo", "carta", "link e nome della tappa"), ("primario-testo", "carta-alta", "link nell'indice"),
+    ("primario-testo", "primario-tenue", "numeri dei passi"), ("su-primario", "primario", "bottoni, livello Nessuno, tappa accesa"),
+    ("su-primario", "primario-forte", "bottoni al passaggio"), ("inchiostro", "ambra-tenue", "riquadro Bozza"),
+    ("inchiostro-2", "carta", "numeri delle tappe spente"),
 ]
 
 
@@ -183,6 +177,10 @@ def main():
         for m in re.finditer(r"@import|url\(\s*['\"]?(https?:)?//", t):
             errori.append(f"[2] {css.relative_to(RADICE)}: {m.group(0)} esterno")
 
+    for p, e in analisi.items():
+        if p.startswith("en/") and any(v.endswith("-it.webp") for _, _, v in e.link + [("", "", x) for x in re.findall(r'src="([^"]+)"', (RADICE / p).read_text(encoding="utf-8"))]):
+            errori.append(f"[2] {p}: schermata in italiano nella pagina inglese")
+
     # 3. link interni e ancore
     for p, e in analisi.items():
         for tag, k, v in e.link:
@@ -238,7 +236,7 @@ def main():
     scuro = {**chiaro, **dict(re.findall(r"--([a-z0-9-]+):\s*(#[0-9a-fA-F]{6})", scuro_blocco))}
     righe_contrasto = []
     for nome_tema, tema in (("chiaro", chiaro), ("scuro", scuro)):
-        for fg, bg, uso in [c for c in COPPIE if c[2] != "_salta_"]:
+        for fg, bg, uso in COPPIE:
             r = contrasto(tema[fg], tema[bg])
             righe_contrasto.append(f"{nome_tema:6} {fg} su {bg} ({uso}): {r:.2f}")
             if r < 4.5:
